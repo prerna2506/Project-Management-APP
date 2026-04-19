@@ -1,6 +1,8 @@
 'use client'
+export const dynamic = "force-dynamic";
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { Header, ViewMode, StatusFilter, PriorityFilter } from '@/components/dashboard/header'
 import { ListView } from '@/components/dashboard/list-view'
@@ -10,9 +12,11 @@ import { TaskDialog } from '@/components/dashboard/task-dialog'
 import { TimeTracker } from '@/components/dashboard/time-tracker'
 import { useTasks } from '@/lib/hooks/use-tasks'
 import type { TaskWithRelations } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
-  const { tasks, isLoading, mutate: mutateTasks } = useTasks()
+  const router = useRouter()
+  const { tasks, isLoading, error, mutate: mutateTasks } = useTasks()
   
   // View and filter state
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -28,6 +32,18 @@ export default function DashboardPage() {
   
   // Time tracker state
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null)
+
+  // Auth protection check
+  useEffect(() => {
+    const supabase = createClient()
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth/login')
+      }
+    }
+    checkAuth()
+  }, [router])
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -85,6 +101,21 @@ export default function DashboardPage() {
     setActiveTimerTaskId(null)
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-background">
+        <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
+        <p className="text-muted-foreground mb-8">We are having trouble connecting to your database.</p>
+        <button 
+          onClick={() => mutateTasks()}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar
@@ -111,8 +142,9 @@ export default function DashboardPage() {
           {/* Main Content */}
           <main className="flex-1 overflow-y-auto p-6">
             {isLoading ? (
-              <div className="flex items-center justify-center h-64">
+              <div className="flex items-center justify-center h-64 flex-col gap-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                <p className="text-sm text-muted-foreground">Loading your workspace...</p>
               </div>
             ) : (
               <>
