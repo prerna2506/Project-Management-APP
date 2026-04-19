@@ -235,7 +235,8 @@ export function ListView({
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           </div>
         )
