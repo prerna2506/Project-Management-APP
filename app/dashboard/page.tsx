@@ -34,12 +34,16 @@ export default function DashboardPage() {
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null)
 
   // Auth protection check
+  const [isAuthChecking, setIsAuthChecking] = useState(true)
+
   useEffect(() => {
     const supabase = createClient()
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/auth/login')
+        router.replace('/auth/login')
+      } else {
+        setIsAuthChecking(false)
       }
     }
     checkAuth()
@@ -112,6 +116,15 @@ export default function DashboardPage() {
         >
           Try Again
         </button>
+      </div>
+    )
+  }
+
+  if (isAuthChecking) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background flex-col gap-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <p className="text-sm text-muted-foreground">Verifying access...</p>
       </div>
     )
   }

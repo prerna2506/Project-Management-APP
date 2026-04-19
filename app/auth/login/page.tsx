@@ -25,6 +25,12 @@ export default function Page() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email || !password) {
+      setError('Please fill all fields')
+      return
+    }
+
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
@@ -39,11 +45,17 @@ export default function Page() {
             `${window.location.origin}/auth/callback`,
         },
       })
-      if (error) throw error
+      
+      if (error) {
+        setError(error.message)
+        setIsLoading(false)
+        return
+      }
+      
+      // Successfully logged in; keep isLoading true to prevent layout flash before redirect
       router.push('/dashboard')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
-    } finally {
       setIsLoading(false)
     }
   }
