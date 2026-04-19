@@ -91,14 +91,14 @@ export function ListView({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="flex overflow-x-auto items-start gap-4 md:gap-6 pb-6 w-full h-full snap-x">
       {(['todo', 'in_progress', 'done'] as TaskStatus[]).map(status => {
         const statusTasks = groupedTasks[status]
         if (statusTasks.length === 0) return null
 
         return (
-          <div key={status}>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+          <div key={status} className="w-[85vw] max-w-[320px] md:min-w-[280px] shrink-0 flex flex-col max-h-full bg-muted/30 p-2 md:p-3 rounded-xl border border-border/50 snap-center md:snap-align-none">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2 px-1">
               <span
                 className="h-2 w-2 rounded-full"
                 style={{
@@ -109,25 +109,26 @@ export function ListView({
                 }}
               />
               {statusLabels[status]}
-              <span className="text-xs font-normal">({statusTasks.length})</span>
+              <span className="text-xs font-normal bg-background px-2 py-0.5 rounded-full border shadow-sm">{statusTasks.length}</span>
             </h3>
 
-            <div className="space-y-2">
+            <div className="space-y-3 overflow-y-auto pr-1 overflow-x-hidden p-1 pb-4">
               {statusTasks.map(task => (
                 <div
                   key={task.id}
                   className={cn(
-                    'group flex items-start gap-3 p-4 rounded-lg border bg-card transition-all hover:shadow-sm',
+                    'group flex flex-col gap-3 p-4 rounded-xl border bg-card/60 backdrop-blur-sm transition-all hover:shadow-md hover:border-border/80 relative',
                     task.status === 'done' && 'opacity-60'
                   )}
                 >
-                  <Checkbox
-                    checked={task.status === 'done'}
-                    onCheckedChange={() => handleToggleStatus(task)}
-                    className="mt-1"
-                  />
+                  <div className="flex items-start gap-3 w-full min-w-0">
+                    <Checkbox
+                      checked={task.status === 'done'}
+                      onCheckedChange={() => handleToggleStatus(task)}
+                      className="mt-1 shrink-0 transition-transform active:scale-95"
+                    />
 
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h4

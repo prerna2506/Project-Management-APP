@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { List, Table2, Calendar, Search, Plus, Filter } from 'lucide-react'
+import { List, Table2, Calendar, Search, Plus, Filter, Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type ViewMode = 'list' | 'table' | 'calendar'
@@ -26,6 +26,7 @@ interface HeaderProps {
   priorityFilter: PriorityFilter
   onPriorityFilterChange: (filter: PriorityFilter) => void
   onAddTask: () => void
+  onMenuClick?: () => void
 }
 
 export function Header({
@@ -37,24 +38,32 @@ export function Header({
   onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
-  onAddTask
+  onAddTask,
+  onMenuClick
 }: HeaderProps) {
   return (
-    <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4 flex-1">
+    <header className="h-16 border-b border-border bg-card px-4 md:px-6 flex items-center justify-between gap-2 overflow-x-auto md:overflow-visible shrink-0 min-w-0">
+      <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-min pl-1">
+        {/* Mobile Menu Button */}
+        {onMenuClick && (
+          <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={onMenuClick}>
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+
         {/* Search */}
-        <div className="relative max-w-md flex-1">
+        <div className="relative min-w-[150px] max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search tasks..."
-            className="pl-9 bg-background"
+            className="pl-9 bg-background focus:bg-background/80 w-full"
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2">
+        {/* Filters - hidden on mobile for cleaner look or auto-wrap */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as StatusFilter)}>
             <SelectTrigger className="w-[130px] bg-background">

@@ -13,6 +13,7 @@ import { TimeTracker } from '@/components/dashboard/time-tracker'
 import { useTasks } from '@/lib/hooks/use-tasks'
 import type { TaskWithRelations } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -36,11 +37,14 @@ export default function DashboardPage() {
   // Auth protection check
   const [isAuthChecking, setIsAuthChecking] = useState(true)
 
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   useEffect(() => {
     const supabase = createClient()
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
         router.replace('/auth/login')
       } else {
         setIsAuthChecking(false)
@@ -130,15 +134,37 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar
-        selectedProjectId={selectedProjectId}
-        onSelectProject={setSelectedProjectId}
-        selectedLabelIds={selectedLabelIds}
-        onToggleLabel={handleToggleLabel}
-      />
+    <div className="flex h-screen bg-background overflow-hidden relative w-full">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block shrink-0">
+        <Sidebar
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+          selectedLabelIds={selectedLabelIds}
+          onToggleLabel={handleToggleLabel}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Mobile Sidebar Navigation */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-[280px] border-r-0">
+          <div className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>Access projects, labels, and views</SheetDescription>
+          </div>
+          <Sidebar
+            selectedProjectId={selectedProjectId}
+            onSelectProject={(id) => {
+              setSelectedProjectId(id)
+              setMobileMenuOpen(false)
+            }}
+            selectedLabelIds={selectedLabelIds}
+            onToggleLabel={handleToggleLabel}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex-1 flex flex-col min-w-0 h-full w-full">
         <Header
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -149,6 +175,7 @@ export default function DashboardPage() {
           priorityFilter={priorityFilter}
           onPriorityFilterChange={setPriorityFilter}
           onAddTask={handleAddTask}
+          onMenuClick={() => setMobileMenuOpen(true)}
         />
 
         <div className="flex-1 flex min-h-0">
