@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createTimeEntry, updateTimeEntry } from "@/lib/hooks/use-tasks"
 import type { TaskWithRelations } from "@/lib/types"
 import { Clock, Play, Square, Pause } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -15,18 +14,18 @@ interface TimeTrackerProps {
   onStopTimer: () => void
 }
 
-export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: TimeTrackerProps) {
+export function TimeTracker({ tasks, onStartTimer, onStopTimer }: TimeTrackerProps) {
+
   const [elapsedTime, setElapsedTime] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [startTime, setStartTime] = useState<Date | null>(null)
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
 
   const activeTask = currentTaskId
     ? tasks.find(t => t.id === currentTaskId)
     : null
 
-  // ✅ Timer logic (pure frontend)
+  // ✅ Timer logic
   useEffect(() => {
     if (!isRunning || isPaused) return
 
@@ -37,43 +36,27 @@ export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: 
     return () => clearInterval(interval)
   }, [isRunning, isPaused])
 
-  const handleStart = async (taskId: string) => {
-    const now = new Date()
-
-    setStartTime(now)
+  // ✅ START
+  const handleStart = (taskId: string) => {
     setElapsedTime(0)
     setIsRunning(true)
     setIsPaused(false)
     setCurrentTaskId(taskId)
 
-    // optional DB save
-    await createTimeEntry({
-      task_id: taskId,
-      start_time: now.toISOString()
-    })
-
     onStartTimer(taskId)
   }
 
-  const handleStop = async () => {
-    if (!startTime || !currentTaskId) return
-
-    const endTime = new Date()
-    const durationMinutes = Math.round(elapsedTime / 60)
-
-    await updateTimeEntry("temp-id", {
-      end_time: endTime.toISOString(),
-      duration_minutes: durationMinutes
-    })
-
+  // ✅ STOP (FULL RESET FIX)
+  const handleStop = () => {
     setIsRunning(false)
-    setElapsedTime(0)
     setIsPaused(false)
+    setElapsedTime(0)
     setCurrentTaskId(null)
 
     onStopTimer()
   }
 
+  // ⏱ format
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -92,12 +75,13 @@ export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: 
 
       <CardContent className="space-y-4">
 
+        {/* ACTIVE TIMER */}
         {activeTask ? (
           <div className="p-4 rounded-xl border bg-blue-50">
 
             <div className="flex justify-between items-center">
 
-              <p className="truncate font-medium">
+              <p className="truncate font-medium max-w-[150px]">
                 {activeTask.title}
               </p>
 
@@ -105,9 +89,20 @@ export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: 
 
                 <Button
                   size="sm"
+                  variant="secondary"
                   onClick={() => setIsPaused(!isPaused)}
                 >
-                  {isPaused ? "Resume" : "Pause"}
+                  {isPaused ? (
+                    <>
+                      <Play className="h-4 w-4 mr-1" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="h-4 w-4 mr-1" />
+                      Pause
+                    </>
+                  )}
                 </Button>
 
                 <Button
@@ -115,15 +110,17 @@ export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: 
                   variant="destructive"
                   onClick={handleStop}
                 >
+                  <Square className="h-4 w-4 mr-1 fill-current" />
                   Stop
                 </Button>
 
               </div>
             </div>
 
+            {/* TIMER DISPLAY */}
             <div
               className={cn(
-                "text-3xl mt-4 font-bold text-blue-600",
+                "text-3xl mt-4 font-bold text-blue-600 transition-all",
                 !isPaused && "animate-pulse"
               )}
             >
@@ -132,20 +129,18 @@ export function TimeTracker({ tasks, activeTaskId, onStartTimer, onStopTimer }: 
 
           </div>
         ) : (
-          <div className="text-center p-4">
-            <p className="text-muted-foreground">
-              Start a task to track time
-            </p>
+          <div className="text-center p-4 text-muted-foreground">
+            Start a task to track time
           </div>
         )}
 
-        {/* Start buttons */}
+        {/* TASK LIST */}
         <div className="space-y-2">
           {tasks.map(task => (
             <Button
               key={task.id}
               onClick={() => handleStart(task.id)}
-              disabled={isRunning}
+              disabled={isRunning && !isPaused}
               className="w-full justify-start"
             >
               <Play className="h-4 w-4 mr-2" />
